@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.core.validators import MinValueValidator
 
 User = get_user_model()
 
@@ -28,17 +29,16 @@ class Recipe(models.Model):
         related_name='recipes',
         blank=False)
     ingredients = models.ManyToManyField(
-        Ingredient)
+        Ingredient, through='RecipeIngredient'
+    )
     tags = models.ManyToManyField(
         Tag,
         blank=False,
-        verbose_name='Tags')
-    image = models.ImageField(blank=False, verbose_name='Image',)
+        related_name='recipes')
+    image = models.ImageField(blank=True, null=True)
     name = models.CharField(max_length=200, blank=False, verbose_name='Name')
     text = models.TextField(max_length=256, blank=False, verbose_name='Text')
     cooking_time = models.IntegerField(blank=False, verbose_name='Cooking time')
-    is_favorited = models.BooleanField(default=False, verbose_name='В избранном')
-    is_in_shopping_cart = models.BooleanField(default=False, verbose_name='В корзине')
     pub_date = models.DateTimeField(
         'Дата добавления',
         auto_now_add=True,
@@ -54,16 +54,30 @@ class Recipe(models.Model):
         return f'{self.name}'
 
 
+class RecipeIngredient(models.Model):
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='ingredients_amounts'
+    )
+    amount = models.IntegerField(
+        validators=[MinValueValidator(1)]
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=('ingredient', 'recipe'),
+                name='unique_recipe_ingredient'
+            )
+        ]
+
 class Follow(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='follower')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='following')
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=('user', 'author'),
-                                    name='unique_follow_list')]
 
 
 class Favorite(models.Model):
@@ -82,7 +96,7 @@ class Purchase(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='purchases')
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE)
+        Recipe, on_delete=models.CASCADE, related_name='purchased_by')
 
     class Meta:
         constraints = [
