@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import CustomUser
 from foodgram_app import models
+
+from .models import CustomUser
 
 
 class RecipesAdmin(admin.ModelAdmin):

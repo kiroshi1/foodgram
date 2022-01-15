@@ -1,17 +1,17 @@
-from foodgram_app.models import (
-    Tag, Ingredient, Recipe, Follow,
-    Favorite, Purchase, RecipeIngredient)
+from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
+                                 Recipe, RecipeIngredient, Tag)
 from rest_framework import serializers
 from users.models import CustomUser
-import webcolors
+
 
 class Base64ImageField(serializers.ImageField):
 
     def to_internal_value(self, data):
-        from django.core.files.base import ContentFile
         import base64
-        import six
         import uuid
+
+        import six
+        from django.core.files.base import ContentFile
 
         if isinstance(data, six.string_types):
             if 'data:' in data and ';base64,' in data:
@@ -45,11 +45,16 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
+        fields = (
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'is_subscribed')
         ordering = ['-id']
 
     def get_is_subscribed(self, obj):
-        return Follow.objects.filter(author=obj, user=self.context['request'].user).exists()
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Follow.objects.filter(user=request.user, author=obj).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -69,7 +74,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 class RecipeIngredientsSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
     amount = serializers.IntegerField()
 
     class Meta:
@@ -83,14 +89,12 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
-    # image = Base64ImageField(max_length=None, use_url=True)
 
     class Meta:
         fields = (
             'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time')
         model = Recipe
-
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -110,7 +114,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all())
     ingredients = RecipeIngredientsSerializer(many=True)
     image = Base64ImageField(max_length=None, use_url=True)
 
@@ -146,7 +151,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
         instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time)
         instance.save()
         return instance
 
@@ -160,7 +166,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(read_only=True, source='recipe.image')
     name = serializers.CharField(read_only=True, source='recipe.name')
     id = serializers.IntegerField(read_only=True, source='recipe.id')
-    cooking_time = serializers.IntegerField(read_only=True, source='recipe.cooking_time')
+    cooking_time = serializers.IntegerField(
+        read_only=True, source='recipe.cooking_time')
 
     class Meta:
         fields = (
@@ -171,7 +178,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
 class ShortRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('id', 'name', 'cooking_time', 'image' )
+        fields = ('id', 'name', 'cooking_time', 'image')
         model = Recipe
 
 
@@ -179,7 +186,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(read_only=True, source='recipe.image')
     name = serializers.CharField(read_only=True, source='recipe.name')
     id = serializers.IntegerField(read_only=True, source='recipe.id')
-    cooking_time = serializers.IntegerField(read_only=True, source='recipe.cooking_time')
+    cooking_time = serializers.IntegerField(
+        read_only=True, source='recipe.cooking_time')
 
     class Meta:
         fields = (
@@ -194,13 +202,15 @@ class FollowSerializer(serializers.ModelSerializer):
     first_name = serializers.ReadOnlyField(source='author.first_name')
     last_name = serializers.ReadOnlyField(source='author.last_name')
     recipes = serializers.SerializerMethodField()
-    # recipes = ShortRecipeSerializer(read_only=True, many=True, source='author.recipes')
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.ReadOnlyField(source='author.recipes.count')
 
     class Meta:
         model = Follow
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count')
+        fields = (
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'is_subscribed', 'recipes',
+            'recipes_count')
 
     def get_recipes(self, obj):
         request = self.context.get('request')
@@ -219,4 +229,5 @@ class FollowSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Follow.objects.filter(user=request.user, author=obj.author).exists()
+        return Follow.objects.filter(
+            user=request.user, author=obj.author).exists()

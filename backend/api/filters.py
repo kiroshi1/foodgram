@@ -1,12 +1,13 @@
 import django_filters
 import django_filters.filterset as filter
-from foodgram_app.models import Recipe, Ingredient
+from foodgram_app.models import Recipe
 
 
 class RecipeFilter(filter.FilterSet):
     tags = django_filters.AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = django_filters.NumberFilter(method='filter_favorite')
-    is_in_shopping_cart = django_filters.NumberFilter(method='filter_shopping_cart')
+    is_in_shopping_cart = django_filters.NumberFilter(
+        method='filter_shopping_cart')
 
     def filter_favorite(self, queryset, name, value):
         if value == 1:
@@ -25,5 +26,3 @@ class RecipeFilter(filter.FilterSet):
     class Meta:
         model = Recipe
         fields = ['tags', 'is_favorited', 'is_in_shopping_cart', ]
-
-

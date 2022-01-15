@@ -1,21 +1,21 @@
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from foodgram_app.models import Recipe, Tag, Ingredient, Follow, Favorite, Purchase, RecipeIngredient
+from django_filters.rest_framework import DjangoFilterBackend
+from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
+                                 Recipe, RecipeIngredient, Tag)
+from rest_framework import filters, status, viewsets
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import CustomUser
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from .filters import RecipeFilter
-from django.db.models import Sum
-# from .permissions import RecipesPermission
 
-from .serializers import (
-    TagSerializer, RecipeReadSerializer, FavoriteSerializer,
-    IngredientSerializer, FollowSerializer, RecipeWriteSerializer, ShoppingCartSerializer)
+from .filters import RecipeFilter
+from .permissions import RecipesPermission
+from .serializers import (FavoriteSerializer, FollowSerializer,
+                          IngredientSerializer, RecipeReadSerializer,
+                          RecipeWriteSerializer, ShoppingCartSerializer,
+                          TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -24,12 +24,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('author', )
     search_fields = ('name', )
     filter_class = RecipeFilter
-    permission_classes = [AllowAny, ]
+    permission_classes = [RecipesPermission, ]
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeReadSerializer
         return RecipeWriteSerializer
+
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
@@ -44,14 +45,18 @@ class IngredientViewSet(viewsets.ModelViewSet):
     search_fields = ('^name',)
     pagination_class = None
 
+
 class APIFollow(APIView):
     def post(self, request, pk=None):
         user = self.request.user
         author = get_object_or_404(CustomUser, id=self.kwargs['pk'])
         if user == author:
-            return Response('You can not follow yourself', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                'You can not follow yourself',
+                status=status.HTTP_400_BAD_REQUEST)
         if Follow.objects.filter(author=author, user=user).exists():
-            return Response('You already subscribed', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                'You already subscribed', status=status.HTTP_400_BAD_REQUEST)
         serializer = FollowSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=user, author=author)
@@ -121,17 +126,36 @@ class APIDownload(APIView):
     def get(self, request):
         user = self.request.user
         purchases = user.purchases.all()
-        lines = []
+        names = []
+        quantity = []
         for purchase in purchases:
             recipe = purchase.recipe
-            ingredients = RecipeIngredient.objects.filter(recipe=recipe).values('ingredient__name', 'ingredient__measurement_unit').annotate(quantity=Sum('amount'))
+            ingredients = RecipeIngredient.objects.filter(
+                recipe=recipe).values(
+                'ingredient__name', 'ingredient__measurement_unit').annotate(
+                quantity=Sum('amount'))
             for i in ingredients:
-                lines.append(f'{i["ingredient__name"]} ({i["ingredient__measurement_unit"]}) — {i["quantity"]}')
-        text = '\n'.join(lines)
-        response = HttpResponse(text, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="Список Покупок.txt"'
+                names.append(
+                    f'{i["ingredient__name"]}'
+                    f' ({i["ingredient__measurement_unit"]})')
+                quantity.append(int(i['quantity']))
+        products = []
+        for i in range(len(names)):
+            products.append([])
+            products[i].append(names[i])
+            products[i].append(quantity[i])
+        dict = {}
+        for i in products:
+            if i[0] in dict:
+                dict[i[0]] += i[1]
+            else:
+                dict[i[0]] = i[1]
+        answer = []
+        for key, value in dict.items():
+            answer.append(f'{key} — {value}')
+        text = '\n'.join(answer)
+        response = HttpResponse(
+            text, content_type='text/plain')
+        response['Content-Disposition'] =\
+            'attachment; filename="Список Покупок.txt"'
         return response
-
-
-
-

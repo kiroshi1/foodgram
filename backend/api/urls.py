@@ -1,8 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import (
-    TagViewSet, RecipeViewSet, IngredientViewSet, APIDownload,
-    APIFollow, APIFollowList, APIFavorite, APIShopping)
+
+from .views import (APIDownload, APIFavorite, APIFollow, APIFollowList,
+                    APIShopping, IngredientViewSet, RecipeViewSet, TagViewSet)
 
 router = DefaultRouter()
 router.register('tags', TagViewSet, basename='tags')
@@ -19,5 +19,4 @@ urlpatterns = [
     path('users/subscriptions/', APIFollowList.as_view()),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-
 ]
