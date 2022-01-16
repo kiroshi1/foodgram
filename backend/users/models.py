@@ -4,11 +4,11 @@ from django.db import models
 
 class CustomUser(AbstractUser):
     first_name = models.CharField(
-        max_length=150, verbose_name='Имя', blank=False)
+        max_length=150, verbose_name='First_name')
     last_name = models.CharField(
-        max_length=150, verbose_name='Фамилия', blank=False)
+        max_length=150, verbose_name='Last_name')
     email = models.EmailField(
-        max_length=254, verbose_name='Email', blank=False, unique=True)
+        max_length=254, verbose_name='Email', unique=True)
 
     USERNAME_FIELD = 'email'
 

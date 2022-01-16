@@ -2,12 +2,13 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
-                                 Recipe, RecipeIngredient, Tag)
 from rest_framework import filters, status, viewsets
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
+                                 Recipe, RecipeIngredient, Tag)
 from users.models import CustomUser
 
 from .filters import RecipeFilter
@@ -50,18 +51,10 @@ class APIFollow(APIView):
     def post(self, request, pk=None):
         user = self.request.user
         author = get_object_or_404(CustomUser, id=self.kwargs['pk'])
-        if user == author:
-            return Response(
-                'You can not follow yourself',
-                status=status.HTTP_400_BAD_REQUEST)
-        if Follow.objects.filter(author=author, user=user).exists():
-            return Response(
-                'You already subscribed', status=status.HTTP_400_BAD_REQUEST)
         serializer = FollowSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=user, author=author)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=user, author=author)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk=None):
         user = self.request.user
@@ -78,84 +71,62 @@ class APIFollowList(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        followers = user.follower.all()
-        return followers
+        queryset = user.follower.all()
+        return queryset
+
+
+def create(request, serializer, pk):
+    user = request.user
+    recipe = get_object_or_404(Recipe, id=pk)
+    serializer = serializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(user=user, recipe=recipe)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+def delete(request, model_name, pk):
+    user = request.user
+    recipe = get_object_or_404(Recipe, id=pk)
+    model = get_object_or_404(model_name, user=user, recipe=recipe)
+    if model:
+        model.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class APIFavorite(APIView):
     def post(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=self.kwargs['pk'])
-        serializer = FavoriteSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return create(request, FavoriteSerializer, self.kwargs['pk'])
 
     def delete(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=self.kwargs['pk'])
-        favorite = get_object_or_404(Favorite, user=user, recipe=recipe)
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return delete(request, Favorite, self.kwargs['pk'])
 
 
 class APIShopping(APIView):
     def post(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=self.kwargs['pk'])
-        serializer = ShoppingCartSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return create(request, ShoppingCartSerializer, self.kwargs['pk'])
 
     def delete(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=self.kwargs['pk'])
-        purchase = get_object_or_404(Purchase, user=user, recipe=recipe)
-        if Purchase.objects.filter(user=user, recipe=recipe).exists():
-            purchase.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return delete(request, Purchase, self.kwargs['pk'])
 
 
 class APIDownload(APIView):
     def get(self, request):
-        user = self.request.user
-        purchases = user.purchases.all()
-        names = []
-        quantity = []
-        for purchase in purchases:
-            recipe = purchase.recipe
-            ingredients = RecipeIngredient.objects.filter(
-                recipe=recipe).values(
-                'ingredient__name', 'ingredient__measurement_unit').annotate(
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__purchased_by__user=request.user).values(
+                'ingredient__name',
+                'ingredient__measurement_unit').annotate(
                 quantity=Sum('amount'))
-            for i in ingredients:
-                names.append(
-                    f'{i["ingredient__name"]}'
-                    f' ({i["ingredient__measurement_unit"]})')
-                quantity.append(int(i['quantity']))
-        products = []
-        for i in range(len(names)):
-            products.append([])
-            products[i].append(names[i])
-            products[i].append(quantity[i])
-        dict = {}
-        for i in products:
-            if i[0] in dict:
-                dict[i[0]] += i[1]
-            else:
-                dict[i[0]] = i[1]
-        answer = []
-        for key, value in dict.items():
-            answer.append(f'{key} — {value}')
-        text = '\n'.join(answer)
+        ingredient_strings = []
+        for elem in ingredients:
+            ingredient_strings.append(
+                f'{elem["ingredient__name"]} '
+                f'({elem["ingredient__measurement_unit"]}) — '
+                f'{elem["quantity"]}')
+        text = '\n'.join(ingredient_strings)
         response = HttpResponse(
             text, content_type='text/plain')
         response['Content-Disposition'] =\
             'attachment; filename="Список Покупок.txt"'
         return response
+

@@ -1,43 +1,11 @@
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+
 from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
                                  Recipe, RecipeIngredient, Tag)
-from rest_framework import serializers
 from users.models import CustomUser
 
-
-class Base64ImageField(serializers.ImageField):
-
-    def to_internal_value(self, data):
-        import base64
-        import uuid
-
-        import six
-        from django.core.files.base import ContentFile
-
-        if isinstance(data, six.string_types):
-            if 'data:' in data and ';base64,' in data:
-                header, data = data.split(';base64,')
-
-            try:
-                decoded_file = base64.b64decode(data)
-            except TypeError:
-                self.fail('invalid_image')
-
-            file_name = str(uuid.uuid4())[:12]
-            file_extension = self.get_file_extension(file_name, decoded_file)
-
-            complete_file_name = "%s.%s" % (file_name, file_extension, )
-
-            data = ContentFile(decoded_file, name=complete_file_name)
-
-        return super(Base64ImageField, self).to_internal_value(data)
-
-    def get_file_extension(self, file_name, decoded_file):
-        import imghdr
-
-        extension = imghdr.what(file_name, decoded_file)
-        extension = "jpg" if extension == "jpeg" else extension
-
-        return extension
+from .fields import Base64ImageField
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -83,6 +51,14 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
+def ingredients_create(products, recipe):
+    for product in products:
+        RecipeIngredient.objects.create(
+            ingredient=product['id'],
+            amount=product['amount'],
+            recipe=recipe)
+
+
 class RecipeReadSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
@@ -126,14 +102,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = self.context.get('request').user
-        ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data, author=author)
-        for ingredient in ingredients:
-            RecipeIngredient.objects.create(
-                ingredient=ingredient['id'],
-                amount=ingredient['amount'],
-                recipe=recipe)
+        ingredients_create(ingredients, recipe)
         for tag in tags:
             recipe.tags.add(tag)
         return recipe
@@ -143,18 +115,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.tags.set(tags_data)
         RecipeIngredient.objects.filter(recipe=instance).all().delete()
         ingredients = validated_data.pop('ingredients')
-        for ingredient in ingredients:
-            RecipeIngredient.objects.create(
-                ingredient=ingredient['id'],
-                amount=ingredient['amount'],
-                recipe=instance)
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time)
-        instance.save()
-        return instance
+        ingredients_create(ingredients, instance)
+        return super(RecipeWriteSerializer, self).update(instance, validated_data)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -231,3 +193,7 @@ class FollowSerializer(serializers.ModelSerializer):
             return False
         return Follow.objects.filter(
             user=request.user, author=obj.author).exists()
+
+    # def validate(self, data):
+    #     print(data)
+    #     return data

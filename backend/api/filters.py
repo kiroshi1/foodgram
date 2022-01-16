@@ -1,9 +1,9 @@
 import django_filters
-import django_filters.filterset as filter
+
 from foodgram_app.models import Recipe
 
 
-class RecipeFilter(filter.FilterSet):
+class RecipeFilter(django_filters.filterset.FilterSet):
     tags = django_filters.AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = django_filters.NumberFilter(method='filter_favorite')
     is_in_shopping_cart = django_filters.NumberFilter(
