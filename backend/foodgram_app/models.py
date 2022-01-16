@@ -154,3 +154,4 @@ class Purchase(models.Model):
         verbose_name = 'Subscription'
         verbose_name_plural = 'Subscriptions'
 
+

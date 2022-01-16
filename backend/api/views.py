@@ -129,4 +129,3 @@ class APIDownload(APIView):
         response['Content-Disposition'] =\
             'attachment; filename="Список Покупок.txt"'
         return response
-

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+# from rest_framework.validators import UniqueTogetherValidator
 
 from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
                                  Recipe, RecipeIngredient, Tag)
@@ -116,7 +116,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.filter(recipe=instance).all().delete()
         ingredients = validated_data.pop('ingredients')
         ingredients_create(ingredients, instance)
-        return super(RecipeWriteSerializer, self).update(instance, validated_data)
+        return super(
+            RecipeWriteSerializer, self).update(instance, validated_data)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -160,7 +161,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
-    username = serializers.ReadOnlyField(source='author.username')
+    username = serializers.ReadOnlyField(default='author.username')
     first_name = serializers.ReadOnlyField(source='author.first_name')
     last_name = serializers.ReadOnlyField(source='author.last_name')
     recipes = serializers.SerializerMethodField()
@@ -170,9 +171,28 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = (
-            'email', 'id', 'username', 'first_name',
+            'user', 'email', 'id', 'username', 'first_name',
             'last_name', 'is_subscribed', 'recipes',
             'recipes_count')
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=Follow.objects.all(),
+        #         fields=['field1', 'field2'],
+        #         message='You\'re already following this user'
+        #     )
+        # ]
+
+        # Я вроде всё исправил кроме валидации, пока не могу
+        # разобраться, по логике в fields должен быть
+        # автор и юзер, но я не объявляю эти поля,
+        # поэтому застрял немного, я завтра смогу
+        # только вечером увидеть ревью
+        # поэтому отправил без этого, чтобы если есть ошибки,
+        # Вы на них указали, а я исправлю уже всё вместе на втором
+
+        # Так же ребята в слаке, подсказали что вроде во фронте нет кнопки
+        # подписаться на себя и что достаточно ограничения в модели follow
+        # не знаю в общем, как тут выкрутиться
 
     def get_recipes(self, obj):
         request = self.context.get('request')
@@ -195,5 +215,3 @@ class FollowSerializer(serializers.ModelSerializer):
             user=request.user, author=obj.author).exists()
 
     # def validate(self, data):
-    #     print(data)
-    #     return data
