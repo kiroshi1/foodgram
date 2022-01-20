@@ -51,7 +51,6 @@ class APIFollow(APIView):
     def post(self, request, pk=None):
         user = self.request.user
         author = get_object_or_404(CustomUser, id=self.kwargs['pk'])
-        # user = get_object_or_404(User, username=self.request.data['following'])
         data = {'user': user.id, 'author': author.id}
         serializer = FollowWriteSerializer(data=data)
         serializer.is_valid(raise_exception=True)

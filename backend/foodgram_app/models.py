@@ -153,5 +153,3 @@ class Purchase(models.Model):
                                     name='unique_purchase_list')]
         verbose_name = 'Purchase'
         verbose_name_plural = 'Purchases'
-
-

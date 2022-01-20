@@ -17,7 +17,10 @@ urlpatterns = [
         name='download_shopping_cart'),
     path('', include(router.urls)),
     path(r'users/<int:pk>/subscribe/', APIFollow.as_view(), name='subscribe'),
-    path(r'recipes/<int:pk>/favorite/', APIFavorite.as_view(), name='favorite'),
+    path(
+        r'recipes/<int:pk>/favorite/',
+        APIFavorite.as_view(),
+        name='favorite'),
     path(
         r'recipes/<int:pk>/shopping_cart/',
         APIShopping.as_view(),
