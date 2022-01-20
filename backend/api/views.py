@@ -10,13 +10,13 @@ from rest_framework.views import APIView
 from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
                                  Recipe, RecipeIngredient, Tag)
 from users.models import CustomUser
-
 from .filters import RecipeFilter
 from .permissions import RecipesPermission
-from .serializers import (FavoriteSerializer, FollowSerializer,
+from .serializers import (FavoriteSerializer, FollowListSerializer,
                           IngredientSerializer, RecipeReadSerializer,
                           RecipeWriteSerializer, ShoppingCartSerializer,
-                          TagSerializer)
+                          TagSerializer, FollowWriteSerializer)
+from .utils import create, delete
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -51,7 +51,9 @@ class APIFollow(APIView):
     def post(self, request, pk=None):
         user = self.request.user
         author = get_object_or_404(CustomUser, id=self.kwargs['pk'])
-        serializer = FollowSerializer(data=request.data)
+        # user = get_object_or_404(User, username=self.request.data['following'])
+        data = {'user': user.id, 'author': author.id}
+        serializer = FollowWriteSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user, author=author)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -67,31 +69,12 @@ class APIFollow(APIView):
 
 
 class APIFollowList(ListAPIView):
-    serializer_class = FollowSerializer
+    serializer_class = FollowListSerializer
 
     def get_queryset(self):
         user = self.request.user
-        queryset = user.follower.all()
+        queryset = CustomUser.objects.filter(following__user=user)
         return queryset
-
-
-def create(request, serializer, pk):
-    user = request.user
-    recipe = get_object_or_404(Recipe, id=pk)
-    serializer = serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save(user=user, recipe=recipe)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-def delete(request, model_name, pk):
-    user = request.user
-    recipe = get_object_or_404(Recipe, id=pk)
-    model = get_object_or_404(model_name, user=user, recipe=recipe)
-    if model:
-        model.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class APIFavorite(APIView):

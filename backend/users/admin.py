@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from foodgram_app import models
-
 from .models import CustomUser
 
 

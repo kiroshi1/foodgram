@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-SECRET_KEY = '3c@b50@)_kpq+34ogkwpconcvovi0-tm#*%nap22(_3k!hkvb_'
+SECRET_KEY = os.getenv('SECRET_KEY', default='3c@b50@)_kpq+34ogkwpconcvovi0-tm#*%nap22(_3k!hkvb_')
 
 DEBUG = True
 

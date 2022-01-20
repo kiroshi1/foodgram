@@ -151,7 +151,7 @@ class Purchase(models.Model):
         constraints = [
             models.UniqueConstraint(fields=('user', 'recipe'),
                                     name='unique_purchase_list')]
-        verbose_name = 'Subscription'
-        verbose_name_plural = 'Subscriptions'
+        verbose_name = 'Purchase'
+        verbose_name_plural = 'Purchases'
 
 
