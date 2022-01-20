@@ -206,7 +206,7 @@ class FollowListSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             recipes_limit = request.query_params.get('recipes_limit')
             if recipes_limit is not None:
-                queryset = obj.ecipes.all()[:int(recipes_limit)]
+                queryset = obj.recipes.all()[:int(recipes_limit)]
             else:
                 queryset = Recipe.objects.filter(author=obj)
         else:
