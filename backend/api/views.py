@@ -14,9 +14,9 @@ from users.models import CustomUser
 from .filters import RecipeFilter, IngredientFilter
 from .permissions import RecipesPermission
 from .serializers import (FavoriteSerializer, FollowListSerializer,
-                          IngredientListSerializer, RecipeReadSerializer,
-                          RecipeWriteSerializer, ShoppingCartSerializer,
-                          TagSerializer, FollowWriteSerializer, IngredientSerializer)
+                          RecipeReadSerializer, RecipeWriteSerializer,
+                          ShoppingCartSerializer, TagSerializer,
+                          FollowWriteSerializer, IngredientSerializer)
 from .utils import create, delete
 
 
