@@ -1,12 +1,17 @@
-import django_filters
+from django_filters.rest_framework import FilterSet, filters
+from rest_framework.filters import SearchFilter
 
 from foodgram_app.models import Recipe
 
 
-class RecipeFilter(django_filters.filterset.FilterSet):
-    tags = django_filters.AllValuesMultipleFilter(field_name='tags__slug')
-    is_favorited = django_filters.NumberFilter(method='filter_favorite')
-    is_in_shopping_cart = django_filters.NumberFilter(
+class IngredientFilter(SearchFilter):
+    search_param = 'name'
+
+
+class RecipeFilter(FilterSet):
+    tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
+    is_favorited = filters.NumberFilter(method='filter_favorite')
+    is_in_shopping_cart = filters.NumberFilter(
         method='filter_shopping_cart')
 
     def filter_favorite(self, queryset, name, value):

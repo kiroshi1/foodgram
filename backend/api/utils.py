@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 
-from foodgram_app.models import Recipe
+from foodgram_app.models import Recipe, RecipeIngredient
 
 
 def create(request, serializer, pk):
@@ -22,3 +22,11 @@ def delete(request, model_name, pk):
         model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+def ingredients_create(products, recipe):
+    for product in products:
+        RecipeIngredient.objects.create(
+            ingredient=product['id'],
+            amount=product['amount'],
+            recipe=recipe)

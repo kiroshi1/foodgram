@@ -7,9 +7,9 @@ SECRET_KEY = os.getenv(
     'SECRET_KEY',
     default='3c@b50@)_kpq+34ogkwpconcvovi0-tm#*%nap22(_3k!hkvb_')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['51.250.16.233', 'razgondev.ru', 'localhost']
 
 
 INSTALLED_APPS = [
@@ -130,3 +130,6 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

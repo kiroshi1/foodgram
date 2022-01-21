@@ -6,16 +6,17 @@ from rest_framework import filters, status, viewsets
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from foodgram_app.models import (Favorite, Follow, Ingredient, Purchase,
                                  Recipe, RecipeIngredient, Tag)
 from users.models import CustomUser
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from .permissions import RecipesPermission
 from .serializers import (FavoriteSerializer, FollowListSerializer,
-                          IngredientSerializer, RecipeReadSerializer,
+                          IngredientListSerializer, RecipeReadSerializer,
                           RecipeWriteSerializer, ShoppingCartSerializer,
-                          TagSerializer, FollowWriteSerializer)
+                          TagSerializer, FollowWriteSerializer, IngredientSerializer)
 from .utils import create, delete
 
 
@@ -37,12 +38,14 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
+    permission_classes = [AllowAny, ]
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filter_backends = (IngredientFilter, )
+    permission_classes = [AllowAny, ]
     search_fields = ('^name',)
     pagination_class = None
 
