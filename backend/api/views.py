@@ -23,7 +23,7 @@ from .utils import create, delete
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    filterset_fields = ('author', )
+    # filterset_fields = ('author__id', )
     search_fields = ('name', )
     filter_class = RecipeFilter
     permission_classes = [RecipesPermission, ]

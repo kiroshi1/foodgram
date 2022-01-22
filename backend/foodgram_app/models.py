@@ -80,17 +80,10 @@ class RecipeIngredient(models.Model):
         verbose_name='RecipeForIngredient'
     )
     amount = models.IntegerField(
-        validators=[MinValueValidator(1)],
         verbose_name='Amount'
     )
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=('ingredient', 'recipe'),
-                name='unique_recipe_ingredient'
-            )
-        ]
         verbose_name = 'RecipeIngredient'
         verbose_name_plural = 'RecipeIngredients'
 

@@ -123,6 +123,19 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         context = {'request': request}
         return RecipeReadSerializer(instance, context=context).data
 
+    def validate(self, data):
+        ingredients = data['ingredients']
+        unique_ingredients = []
+        for ingredient in ingredients:
+            if ingredient['id'] in unique_ingredients:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться!')
+            unique_ingredients.append(ingredient['id'])
+            if ingredient['amount'] < 1:
+                raise serializers.ValidationError(
+                    'Кол-во ингредиентов должно быть больше 0!')
+        return data
+
 
 class FavoriteSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(read_only=True, source='recipe.image')

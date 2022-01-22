@@ -9,7 +9,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['51.250.16.233', 'razgondev.ru', 'localhost']
+ALLOWED_HOSTS = ['51.250.16.233', 'razgondev.ru', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
