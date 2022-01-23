@@ -25,7 +25,7 @@ docker-compose exec backend python manage.py migrate
 docker-compose exec backend python manage.py createsuperuser
 ```
 Проект доступен по адресу:
-#### razgondev.ru
+#### ВОТ АДРЕС razgondev.ru, админка как и тогда admin@mail.ru 123
 ### Наслаждайтесь
 ### Авторы
 Denis Razgonyaev
