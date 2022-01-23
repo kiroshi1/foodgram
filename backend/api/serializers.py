@@ -134,6 +134,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             if ingredient['amount'] < 1:
                 raise serializers.ValidationError(
                     'Кол-во ингредиентов должно быть больше 0!')
+        cooking_time = data['cooking_time']
+        if cooking_time < 1:
+            raise serializers.ValidationError(
+                'Время готовки должно быть больше минуты!')
         return data
 
 
